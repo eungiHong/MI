@@ -18,27 +18,21 @@ import org.apache.lucene.store.FSDirectory;
 
 public class Indexer {
 	
-	private IndexWriter writer;
-	private IndexWriterConfig conf;
+	private IndexWriter indexWriter;
+	private IndexWriterConfig config;
 	private Analyzer analyzer;
 	
 	public Indexer (Path indexDirectoryPath) throws IOException {
-		
-		// this directory will contain the indexes
-		// 인덱스를 저장할 디렉터리 설정
-		Directory indexDirectory = FSDirectory.open(indexDirectoryPath);
-		
-		//create the indexer
+		// 인덱스를 저장할 디렉터리 경로 설정
+		Directory indexDirectory = FSDirectory.open(indexDirectoryPath);	
+		// Indexer 생성
 		analyzer = new StandardAnalyzer();
-		conf = new IndexWriterConfig(analyzer);
-		writer = new IndexWriter(indexDirectory, conf);
-		
+		config = new IndexWriterConfig(analyzer);
+		indexWriter = new IndexWriter(indexDirectory, config);
 	}
-	
 	public void close() throws CorruptIndexException, IOException {
-		writer.close();
+		indexWriter.close();
 	}
-	
 	// 파일을 읽어서 다큐먼트화
 	private Document getDocument(File file) throws IOException {
 		Document document = new Document();
@@ -52,29 +46,27 @@ public class Indexer {
 		@SuppressWarnings("deprecation")
 		Field filePathField = new Field(LuceneConstants.FILE_PATH, file.getCanonicalPath(), Field.Store.YES, Field.Index.NOT_ANALYZED);
 		
-		document.add(contentField);
+		document.add(contentField);  // Adds a field to a document.
 		document.add(fileNameField);
-		document.add(filePathField);
-		
+		document.add(filePathField);	
 		return document;
 	}
-	// 파일을 다큐먼트화 한 뒤, 인덱싱
+	// 파일을 다큐먼트화 한 뒤, indexWriter에 추가
 	private void indexFile (File file) throws IOException {
 		System.out.println("Indexing " + file.getCanonicalPath());
 		Document document = getDocument(file);
-		writer.addDocument(document); // addDocument가 실질적으로 인덱스 파일을 생성하는듯?
+		indexWriter.addDocument(document); // adds a document to this index
 	}
-	
 	// 메소드를 혼합하여 실질적으로 인덱스 생성
 	public int createIndex(String dataDirPath, FileFilter filter) throws IOException {
 		//get all files in the data directory
 		File[] files = new File(dataDirPath).listFiles();
-		
 		for (File file : files) {
 			if (!file.isDirectory() && !file.isHidden() && file.exists() && file.canRead() && filter.accept(file)) {
 				indexFile(file);
 			}
 		}
-		return writer.numDocs(); // 인덱스 문서의 개수를 리턴하는듯?
+		return indexWriter.numDocs(); // Returns total number of documents in this index, including docs not yet 
+									  // flushed (still in the RAM buffer), and including deletions.
 	}
 }

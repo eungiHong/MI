@@ -1,6 +1,8 @@
 package mi;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
@@ -18,19 +20,23 @@ public class LuceneTester {
 	Indexer indexer;
 	Searcher searcher;
 	
-	public static void main(String[] args) throws org.apache.lucene.queryparser.classic.ParseException {
+	public static void main(String[] args) throws org.apache.lucene.queryparser.classic.ParseException, IOException {
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		System.out.println("What do you want to find out, you mortal?");
+		String question = br.readLine();
 		LuceneTester tester;
+		
 		try {
 			tester = new LuceneTester();
-			// tester.createIndex10();
-			tester.search10("functional");
+			// tester.createIndex();
+			tester.search(question);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
 	}
-	private void createIndex10() throws IOException {
+	private void createIndex() throws IOException {
 		indexer = new Indexer(indexPath);
 		int numIndexed;
 		long startTime = System.currentTimeMillis();
@@ -40,7 +46,7 @@ public class LuceneTester {
 		System.out.println(numIndexed + " File indexed, time taken: " + (endTime - startTime) + " ms");
 	}
 	
-	private void search10(String searchQuery) throws IOException, ParseException, org.apache.lucene.queryparser.classic.ParseException {
+	private void search(String searchQuery) throws IOException, ParseException, org.apache.lucene.queryparser.classic.ParseException {
 		searcher = new Searcher(indexPath, LuceneConstants.CONTENTS, new StandardAnalyzer());
 		long startTime = System.currentTimeMillis();
 		TopDocs hits = searcher.search(searchQuery);
@@ -48,8 +54,10 @@ public class LuceneTester {
 		
 		System.out.println(hits.totalHits + " documents found. Time :" + (endTime - startTime));
 		for (ScoreDoc scoreDoc : hits.scoreDocs) {
-			Document doc = searcher.getDocument(scoreDoc);
-			System.out.println("File: " + doc.get(LuceneConstants.FILE_PATH));
+			Document docCandidate = searcher.getDocument(scoreDoc);
+			System.out.println("File Path: " + docCandidate.get(LuceneConstants.FILE_PATH));
+			System.out.println("File Name: " + docCandidate.get(LuceneConstants.FILE_NAME));
+			System.out.println("File Contents: " + docCandidate.get(LuceneConstants.CONTENTS)); // 왜 contents가 없을까?
 		}
 		searcher.close();
 	}
