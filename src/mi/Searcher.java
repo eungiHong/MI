@@ -5,16 +5,13 @@ import java.nio.file.Path;
 import java.text.ParseException;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -31,7 +28,7 @@ public class Searcher {
 		Directory indexDirectory = FSDirectory.open(indexDirectoryPath);
 		directoryReader = DirectoryReader.open(indexDirectory); // 인덱스를 읽어 들임
 		indexSearcher = new IndexSearcher(directoryReader); // 인덱스를 검색
-		queryParser = new QueryParser(fieldname, analyzer); // 질문을 컴퓨터가 이해하는 방식으로 변환하는 QueryParser
+		queryParser = new QueryParser(LuceneConstants.CONTENTS, analyzer); // 질문을 컴퓨터가 이해하는 방식으로 변환하는 QueryParser
 															// fieldname: the default field for query terms.
 	}
 	// QueryParser가 파싱한 query를 가지고 인덱스를 검색하여 TopDocs를 리턴

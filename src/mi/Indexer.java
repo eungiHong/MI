@@ -1,5 +1,6 @@
 package mi;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
@@ -10,6 +11,8 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -36,15 +39,23 @@ public class Indexer {
 	// 파일을 읽어서 다큐먼트화
 	private Document getDocument(File file) throws IOException {
 		Document document = new Document();
-		//index file contents
-		@SuppressWarnings("deprecation")
-		Field contentField = new Field(LuceneConstants.CONTENTS, new FileReader(file));
-		//index file name
-		@SuppressWarnings("deprecation")
-		Field fileNameField = new Field(LuceneConstants.FILE_NAME, file.getName(), Field.Store.YES, Field.Index.NOT_ANALYZED);
+		
+		// index file content (stored)
+		BufferedReader in = new BufferedReader(new FileReader(file));
+		String contents = "";
+		while (true) {
+			contents = contents + " " + in.readLine();
+			if (in.readLine() == null) break;
+		}
+		in.close();
+		Field contentField = new TextField(LuceneConstants.CONTENTS, contents, Field.Store.YES);
+				
+		// index file content (not stored)
+		// Field contentField = new TextField(LuceneConstants.CONTENTS, new FileReader(file));
+		// index file name
+		Field fileNameField = new StringField(LuceneConstants.FILE_NAME, file.getName(), Field.Store.YES);
 		//index file path
-		@SuppressWarnings("deprecation")
-		Field filePathField = new Field(LuceneConstants.FILE_PATH, file.getCanonicalPath(), Field.Store.YES, Field.Index.NOT_ANALYZED);
+		Field filePathField = new StringField(LuceneConstants.FILE_PATH, file.getCanonicalPath(), Field.Store.YES);
 		
 		document.add(contentField);  // Adds a field to a document.
 		document.add(fileNameField);
@@ -60,7 +71,7 @@ public class Indexer {
 	// 메소드를 혼합하여 실질적으로 인덱스 생성
 	public int createIndex(String dataDirPath, FileFilter filter) throws IOException {
 		//get all files in the data directory
-		File[] files = new File(dataDirPath).listFiles();
+		File[] files = new File(dataDirPath).listFiles(); // dataDirPath 내의 파일이나 디렉토리를 리스트에 담아 반환
 		for (File file : files) {
 			if (!file.isDirectory() && !file.isHidden() && file.exists() && file.canRead() && filter.accept(file)) {
 				indexFile(file);

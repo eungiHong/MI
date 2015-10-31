@@ -1,6 +1,7 @@
 package mi;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
@@ -14,21 +15,22 @@ import org.apache.lucene.search.TopDocs;
 
 public class LuceneTester {
 	
-	String indexDir = "C:\\Lucene\\Index";
-	String dataDir = "C:\\Lucene\\Data";
+	String indexDir = "C:"+File.separator+"Lucene"+File.separator+"Index";
+	String dataDir = "C:"+File.separator+"Lucene"+File.separator+"Data";
 	Path indexPath = Paths.get(indexDir);
 	Indexer indexer;
 	Searcher searcher;
 	
 	public static void main(String[] args) throws org.apache.lucene.queryparser.classic.ParseException, IOException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		System.out.println("What do you want to find out, you mortal?");
-		String question = br.readLine();
+		
 		LuceneTester tester;
 		
 		try {
 			tester = new LuceneTester();
-			// tester.createIndex();
+			tester.createIndex();
+			System.out.println("\nWhat do you want to find out, you mortal?");
+			String question = br.readLine();
 			tester.search(question);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -57,7 +59,7 @@ public class LuceneTester {
 			Document docCandidate = searcher.getDocument(scoreDoc);
 			System.out.println("File Path: " + docCandidate.get(LuceneConstants.FILE_PATH));
 			System.out.println("File Name: " + docCandidate.get(LuceneConstants.FILE_NAME));
-			System.out.println("File Contents: " + docCandidate.get(LuceneConstants.CONTENTS)); // 왜 contents가 없을까?
+			System.out.println("File Contents:" + docCandidate.get(LuceneConstants.CONTENTS));
 		}
 		searcher.close();
 	}
