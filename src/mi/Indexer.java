@@ -6,8 +6,11 @@ import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -23,19 +26,26 @@ public class Indexer {
 	
 	private IndexWriter indexWriter;
 	private IndexWriterConfig config;
-	private Analyzer analyzer;
-	
+	private HashMap<String, Analyzer> analyzerPerField;
+	private PerFieldAnalyzerWrapper aWrapper;
+
 	public Indexer (Path indexDirectoryPath) throws IOException {
 		// 인덱스를 저장할 디렉터리 경로 설정
-		Directory indexDirectory = FSDirectory.open(indexDirectoryPath);	
-		// Indexer 생성
-		analyzer = new StandardAnalyzer();
-		config = new IndexWriterConfig(analyzer);
+		Directory indexDirectory = FSDirectory.open(indexDirectoryPath);
+		
+		analyzerPerField = new HashMap<String, Analyzer>();
+		aWrapper = new PerFieldAnalyzerWrapper(new StandardAnalyzer(), analyzerPerField);
+		// 파일명의 경우 KeywordAnalyzer로 분석 (default는 StandardAnalyzer)
+		analyzerPerField.put(LuceneConstants.FILE_NAME, new KeywordAnalyzer());
+		
+		config = new IndexWriterConfig(aWrapper);
 		indexWriter = new IndexWriter(indexDirectory, config);
 	}
+	
 	public void close() throws CorruptIndexException, IOException {
 		indexWriter.close();
 	}
+	
 	// 파일을 읽어서 다큐먼트화
 	private Document getDocument(File file) throws IOException {
 		Document document = new Document();
@@ -52,6 +62,7 @@ public class Indexer {
 				
 		// index file content (not stored)
 		// Field contentField = new TextField(LuceneConstants.CONTENTS, new FileReader(file));
+		
 		// index file name
 		Field fileNameField = new StringField(LuceneConstants.FILE_NAME, file.getName(), Field.Store.YES);
 		//index file path
@@ -62,12 +73,14 @@ public class Indexer {
 		document.add(filePathField);	
 		return document;
 	}
+	
 	// 파일을 다큐먼트화 한 뒤, indexWriter에 추가
 	private void indexFile (File file) throws IOException {
 		System.out.println("Indexing " + file.getCanonicalPath());
 		Document document = getDocument(file);
 		indexWriter.addDocument(document); // adds a document to this index
 	}
+	
 	// 메소드를 혼합하여 실질적으로 인덱스 생성
 	public int createIndex(String dataDirPath, FileFilter filter) throws IOException {
 		//get all files in the data directory
